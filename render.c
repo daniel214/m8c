@@ -15,8 +15,6 @@ SDL_Texture *maintexture;
 SDL_Color background_color = (SDL_Color){0, 0, 0, 0};
 
 static uint32_t ticks;
-static uint32_t ticks_fps;
-static int fps;
 uint8_t fullscreen = 0;
 
 // Initializes SDL and creates a renderer and required surfaces
@@ -177,10 +175,26 @@ void display_keyjazz_overlay(uint8_t show, uint8_t base_octave) {
   }
 }
 
+void draw_fps(float fps) {
+  char fps_str[10];
+  sprintf(fps_str, "%0.1f fps", fps);
+  inprint(rend, fps_str, 3, 3, 0x00ffffff, 0x00000000);
+  // A better way to do this would be to cache the text texture for 
+  // redraw every frame, and not re-render it unless the number changes.
+}
+
 void render_screen() {
 
+  static float calc_fps = 0;
+  static uint32_t ticks_fps;
+  static int fps = 0;
+
+
   if (SDL_GetTicks() - ticks > 14) {
+
     ticks = SDL_GetTicks();
+
+    draw_fps(calc_fps);
     SDL_SetRenderTarget(rend, NULL);
     SDL_SetRenderDrawColor(rend, 0, 0, 0, 0);
     SDL_RenderClear(rend);
@@ -192,7 +206,8 @@ void render_screen() {
 
     if (SDL_GetTicks() - ticks_fps > 5000) {
       ticks_fps = SDL_GetTicks();
-      SDL_LogDebug(SDL_LOG_CATEGORY_VIDEO, "%.1f fps\n", (float)fps / 5);
+      calc_fps = (float)fps/5;
+      SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "%0.1f fps", calc_fps);
       fps = 0;
     }
   }
